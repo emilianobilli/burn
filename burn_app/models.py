@@ -13,6 +13,8 @@ FORMAT = (
 	('', 'Empty'),
 )
 
+#TEST
+
 class VideoProfile (models.Model):
 	
 	name						=models.CharField(unique=True, max_length=32)
