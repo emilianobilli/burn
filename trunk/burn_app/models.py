@@ -32,7 +32,7 @@ class Path (models.Model):
 	description					=models.CharField(max_length=256)
 	def __unicode__(self):
 		return self.key
-		
+
 class TranscodingServer (models.Model):
 
 	name						=models.CharField(max_length=256)
@@ -41,9 +41,7 @@ class TranscodingServer (models.Model):
 	def __unicode__(self):
 		return self.ip_adress
 
-def GetTranscodingServer():
-    return TranscodingServer.objects.filter(status='E')
-	
+
 	
 class SubtitleProfile (models.Model):
 	
@@ -79,11 +77,12 @@ class VideoSubRendition(models.Model):
 	transcoding_server				=models.ForeignKey('TranscodingServer', blank=True, null=True)
 	transcoding_job_guid				=models.CharField(max_length=256, blank=True)
 	status						=models.CharField(max_length=1, choices=VIDEO_RENDITION_STATUS)
-	video_file_name					=models.CharField(max_length=256)
-	sub_file_name					=models.CharField(max_length=256)
+	src_file_name					=models.CharField(max_length=256)
+	src_svc_path					=models.CharField(max_length=256)
+	sub_file_name					=models.CharField(max_length=512)
 	error						=models.CharField(max_length=256, blank=True)
-#	speed						=models.Charfield(max_length=25, blank=True)				
-#	progress					=models.CharField(max_length=10, blank=True)
+	speed						=models.Charfield(max_length=25, blank=True)				
+	progress					=models.CharField(max_length=10, blank=True)
 
 	def __unicode__ (self):
 		return self.file_name
@@ -91,8 +90,8 @@ class VideoSubRendition(models.Model):
 class Brand (models.Model):
 
 	name						=models.CharField(max_length=256)
-	subtitle_profile				=models.ForeignKey('VideoSubRendition')
-	
+	subtitle_profile				=models.ForeignKey('SubtitleProfile')
+	video_profile					=models.ForeignKet('VideoProfile')	
 	def __unicode__ (self):
 		return self.name
 
@@ -102,8 +101,10 @@ class SubProcess (models.Model):
 		('D', 'Done'),
 		('W', 'Waiting'),
 		('N', 'New'),
+		('E', 'Error'),
 	)
 	file_name					=models.CharField(max_length=256)
+	subtitle					=models.CharField(max_length=256)
 	brand 						=models.ForeignKey('Brand')
 	status						=models.CharField(max_length=1, choices=SUBPROCESS_QUEUE_STATUS)
 	error						=models.CharField(max_length=256, blank=True)
@@ -111,10 +112,16 @@ class SubProcess (models.Model):
 	def __unicode__ (self):
 		return self.file_name
 		
+def GetPath(path=None):
+    if path is not None:
+	try:
+	    return Path.objects.get(key=path).location
+	except:
+	    return None
+    return None		
 
-
-
-
+def GetTranscodingServer():
+    return TranscodingServer.objects.filter(status='E')
 
 
 
