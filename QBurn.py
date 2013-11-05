@@ -12,44 +12,255 @@ from carbonapi.XmlTitler 	 import *
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 from stl			 import *
 
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Librerias Utiles
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+import time
+import logging
+import sys, time
 
-def InitCarbonPool(rhozetlist=[]):
+
+
+def InitCarbonPool(TServerList = []):
+
+    # Se crea el pool de Carbon
     CPool       = CarbonPool()
+    
+    # La lista no este vacia
+    if len(TServerList) == 0:
+	return None
 
-    for rhozet in rhozetlist:
-	CPool.addCarbon(rhozet)
-
+    for TServer in TServerList:
+	ret = CPool.addCarbon(TServer.ip_address)
+	if ret == False:
+	    TServer.status = 'D'
+	    TServer.save()
+	    logging.warning("InitCarbonPool(): Carbon server [%s] fail to init -> Set Disable" % TServer.ip_address)
+	else:
+	    logging.info("InitCarbonPool(): Carbon server [%s] init OK" % TServer.ip_address)
     if CPool.poolLen() == 0:
 	return None
     
     return CPool
 
-def MakeTranscodeInfo (TranscodeGuid, DstBasename, DstPath, TCin, XmlTitlerElement):
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Comprueba la existencia de un archivo
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++    
+def FileExist(path, file):
+    if os.path.isfile(path+file):
+	return True
+
+    return False
+
+
+def CheckAssignedVideoSubRenditions(VSubRenditions = [])
+
+    logging.info("CheckAssignedVideoSubRenditions(): Start Check Video Rendition Status")
+
+
+    ################## Traer Video Local Path
+            
+    #
+    # Agrega / si no es que exite al final
+    #
+    if not video_local_path.endswith('/'):
+	video_local_path = video_local_path + '/'
+
+    #
+    # Trae todos los video rendition cuyo Status = Q
+    #
+    for VRendition in VSubRenditions:
+	
+	logging.info("CheckAssignedVideoSubRenditions(): Video Rendition Check: " + VRendition.file_name)
+	logging.info("CheckAssignedVideoSubRenditions(): Video Rendition Item: " + VRendition.item.name)
+
+	logging.info("CheckAssignedVideoSubRenditions(): Transcoding Server: " + VRendition.transcoding_server.ip_address)
+	logging.info("CheckAssignedVideoSubRenditions(): Job GUID: " + VRendition.transcoding_job_guid)
+	
+	
+	JobState, Progress = GetJobState(VRendition.transcoding_server.ip_address, VRendition.transcoding_job_guid)
+	logging.info("CheckAssignedVideoSubRenditions(): Job Progress: " + str(Progress))
+	logging.info("CheckAssignedVideoSubRenditions(): Job State: " + JobState)
+	
+	if JobState == 'NEX_JOB_COMPLETED':
+
+	    if FileExist(video_local_path, VRendition.file_name):
+		    #
+		    # Si el archivo existe
+		    #
+		    # - Calcula su checksum
+		    # - Calcula su filesize
+		    # - Establece su Status en F -> Finished
+	    
+		VRendition.status   = 'F'
+		VRendition.progress = '100'
+		VRendition.save()
+		
+		logging.info("CheckAssignedVideoSubRenditions(): Video Rendition finish all procesing: " + VRendition.file_name)
+	    else:
+		    #
+		    # Si el archivo no existe es porque se produjo un error
+		    #
+		logging.error("CheckAssignedVideoSubRenditions(): Video Rendition not exist: [FILE]-> " + VRendition.file_name + ", [PATH]-> " + video_local_path)
+		VRendition.status   = 'E'
+		VRendition.error    = "Video Rendition not exist: [FILE]-> " + VRendition.file_name + ", [PATH]-> " + video_local_path
+		VRendition.save()    
+	else:
+	    if JobState == 'NEX_JOB_STARTED':
+		VRendition.speed = GetJobSpeed(VRendition.transcoding_server.ip_address, VRendition.transcoding_job_guid)
+		VRendition.progress = str(Progress)
+		VRendition.save()
+		
+    	    if JobState == 'NEX_JOB_ERROR':
+    		#
+		# Si el job termino con errores
+    		#
+    		VRendition.status = 'E'
+		VRendition.error  = GetJobError(VRendition.transcoding_server.ip_address, VRendition.transcoding_job_guid)
+    		logging.error("CheckAssignedVideoSubRenditions(): %s" % VRendition.error)
+    		VRendition.save()
+	    
+	    if JobState == 'NEX_JOB_STOPPED':
+    		#
+		# Alguien Freno el Job
+		# 
+		VRendition.status = 'E'
+		VRendition.error  = "Stop Job"
+		logging.error("CheckAssignedVideoSubRenditions(): %s" % VRendition.error)
+		VRendition.save()
+
+	    if JobState == '':
+		VRendition.status = 'E'
+		VRendition.error  = "Job State Empty"
+		logging.error("CheckAssignedVideoSubRenditions(): %s" % VRendition.error)
+		VRendition.save()
+		
+    logging.info("CheckAssignedVideoSubRenditions(): End Check Video Rendition Status")
+    return True
+
+
+
+def AssignVideoSubRenditions(UVSubRenditions = [],CarbonPOOL,ForceSchedule=False):
+    global ErrorString
+    ErrorString = ''
+
+    logging.info("AssignVideoSubRenditions():Start Checking Unassingned Video Renditions")
+
+    if len(UVSubRenditions) > 0:
+
+	for VSubRendition in UVSubRenditions: 
+
+	    XmlTitlerElement = StlToXmlTitler(VSubRendition.subtitle_profile, VSubRendition.sub_file_name) 
+
+	    TranscodeInfo    =  MakeTranscodeInfo (VSubRendition.video_profile.guid, 
+					           VSubRendition.file_name, 
+					           DstPath ######,
+					           XmlTitlerElement)
+
+	    logging.debug("AssignVideoSubRenditions(): Transcode Info: " +  str(TranscodeInfo))
+	    #
+	    # Crea el XML con el Job de Transcodificacion
+	    #
+	    try:
+		XmlJob    = CreateCarbonXMLJob(VSubRendition.src_svc_path,VSubRendition.src_file_name,[],[TranscodeInfo],None,None)
+	    except:
+		e = sys.exc_info()[0]
+	        logging.error("AssignVideoSubRenditions(): 01: Exception making Carbon XML Job. Catch: " + e)
+		ErrorString = '01: Exception making Carbon XML Job. Catch: ' + e 
+		return False
+
+	    if XmlJob is None:
+		logging.error("AssignVideoSubRenditions(): 01: Error making Carbon XML Job")
+	        ErrorString = '01: Error making Carbon XML Job'
+	        return False
+
+	    JobReply       = StartJobCarbonPool(CarbonPOOL,XmlJob, ForceSchedule)
+	    if JobReply.Result == True:
+		#
+		# Si puedo Asignarle un Transcoding Server
+		# 
+		# 1- Lo Marca como Encolado
+		# 2- Carga en Base de Datos el GUID del Job 
+		# 3- Carga el Transcoding Server Asignado
+		#
+		VSubRendition.status = 'Q'
+		VSubRendition.transcoding_job_guid = JobReply.Job.GetGUID()
+
+		try:
+		    TServer = models.TranscodingServer.objects.get(ip_address=JobReply.Job.GetCarbonHostname())
+		    logging.info("AssignVideoSubRenditions(): Carbon Server ->" + TServer.ip_address)
+		except:
+		    #
+		    # Si no encuentra el transcoding Server Asignado
+		    #
+		    ErrorString = '02: Can not find the Assigned Carbon Server'
+		    logging.error("AssignVideoSubRenditions(): Can not find the Assigned Carbon Server -> " + JobReply.Job.GetCarbonHostname())
+	    	    return False
+	    	        	    	
+		VSubRendition.transcoding_server = TServer
+		VSubRendition.save()
+	    else:
+		if JobReply.Error == False:
+		    logging.info("AssignVideoSubRenditions(): Can Not Assign Carbon Server ( No one have slots )")	
+		    return True
+		else:
+		    ErrorString = '02: Error sending Job'
+		    logging.error("AssignVideoSubRenditions(): 02: Error sending Job")
+	    	    return False
+
+    logging.info("AssignVideoSubRenditions(): End Checking Unassingned Video Renditions")
+    return True
+
+
+
+def CreateVideoSubRendition(SubProcess=None):
+    
+    if SubProcess is None:
+	return False
+	
+    subtitle_path = models.GetPath('subtitle_local_path')
+    video_path	  = models.GetPath('video_local_path')
+    svc_path	  = models.GetPath('rhozet_access_path')
+    
+    
+    if FileExist(video_path,SubProcess.file_name):
+    
+    #### Falta Buscar Subtitulo ####
+	    
+	VSRendition = models.VideoSubRendition()
+	VSRendition.file_name = #############
+	VSRendition.video_profile        = SubProcess.brand.video_profile
+	VSRendition.subtitle_profile     = SubProcess.brand.subtitle_profile
+	VSRendition.transcoding_job_guid = ''    
+	VSRendition.status		 = 'U'
+	VSRendition.src_file_name        = SubProcess.file_name
+	VSRendition.src_svc_path	 = svc_path
+	VSRendition.sub_file_name	 = ############# Guardar el file completo con ruta
+	VSRendition.save()
+    
+    #### Falta hacer dump ####
+    
+    return True	
+	
+	
+def MakeTranscodeInfo (TranscodeGuid, DstBasename, DstPath, XmlTitlerElement):
     #
     # Arma los parametros de transcodificacion
     #	
     TranscodeInfo = { 'd_guid'    : TranscodeGuid, 
                       'd_basename': DstBasename, 
                       'd_path'    : DstPath,
-                      'subtitle'  : XmlTitlerElement }
+                      'subtitle'  : XmlTitlerElement.ToElement() }
 
     return TranscodeInfo
-    
 
-def BurnSubtitle(Source,File,TranscodeInfo,Cpool, ForceSchedule=False):
-
-    XmlJob    = CreateCarbonXMLJob(Source,File,[],[TranscodeInfo],None,None)
-
-    print XmlJob
-
-    if XmlJob is None:
-        ErrorString = '01: Error making Carbon XML Job'
-        print ErrorString
-        return False
-
-
-    return StartJobCarbonPool(Cpool,XmlJob, ForceSchedule)
-
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# StlToXmlTitler(): Convierte un STL a la estructura de Datos XmlTitler		    #
+#										    #
+# Argumentos: SubProfile  -> Subtitulo profile					    #
+#	      StlFileName -> Nombre del archivo de Subtitulo (stl)		    #	
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 def StlToXmlTitler(SubProfile, StlFileName):
 
     # Abre el archivo STL
@@ -78,6 +289,7 @@ def StlToXmlTitler(SubProfile, StlFileName):
      
     XmlTitler.append(Style)
 
+    # Por Cada TTI del Stl crea una estructura de tipo Data()
     for tti in stl.tti:
 	TextAndTiming = Data()
         TextAndTiming.StartTimecode = str(tti.tci) 
@@ -87,24 +299,35 @@ def StlToXmlTitler(SubProfile, StlFileName):
         TextAndTiming.PosY	    = '0.75'
         XmlTitler.AppendData(data)
 	
-    return XmlTitler.ToElement()
-    
+    return XmlTitler
 
-	
-SRC_FILE = 'Atada-a-su-PiXXa_QT.mov'
-SRC_PATH = '\\\\10.3.3.70\\VIDEO_PROC\\'
-DST_GUID = '{95B787F1-DB73-4013-AE59-9D6E84F7D421}'
 
-STL_FILE = '/home/emilianob/Atada a su PiXXa_Esp_Ok.stl'
-DST_BASENAME = 'TEST_SUB'
 
-Xml = StlToXmlTitler(STL_FILE)
+class main_daemon(Daemon):
+    def run(self):
+        try:
+    	    main()
+	except KeyboardInterrupt:
+	    sys.exit()	    
 
-print Xml
+if __name__ == "__main__":
+	daemon = main_daemon('./pid/QBurn.pid', stdout='./log/QBurn.err', stderr='./log/QBurn.err')
+	if len(sys.argv) == 2:
+		if 'start'     == sys.argv[1]:
+			daemon.start()
+		elif 'stop'    == sys.argv[1]:
+			daemon.stop()
+		elif 'restart' == sys.argv[1]:
+			daemon.restart()
+		elif 'run'     == sys.argv[1]:
+			daemon.run()
 
-Cpool = InitCarbonPool(['10.3.3.66'])
-
-TranscodeInfo = MakeTranscodeInfo(DST_GUID,DST_BASENAME,'\\\\10.3.3.70\\VIDEO_PROC\\', '01:00:00:00', Xml)
-x = BurnSubtitle(SRC_PATH,SRC_FILE,TranscodeInfo,Cpool)
-
-print x
+		elif 'status'  == sys.argv[1]:
+			daemon.status()
+		else:
+			print "Unknown command"
+			sys.exit(2)
+		sys.exit(0)
+	else:
+		print "usage: %s start|stop|restart|run" % sys.argv[0]
+		sys.exit(2)

@@ -40,6 +40,9 @@ class TranscodingServer (models.Model):
 	status						=models.CharField(max_length=1, choices = ACTIVE_STATUS)
 	def __unicode__(self):
 		return self.ip_adress
+
+def GetTranscodingServer():
+    return TranscodingServer.objects.filter(status='E')
 	
 	
 class SubtitleProfile (models.Model):
