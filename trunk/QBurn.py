@@ -86,9 +86,6 @@ def CheckAssignedVideoSubRenditions(VSubRenditions = [])
     if not video_local_path.endswith('/'):
 	video_local_path = video_local_path + '/'
 
-    #
-    # Trae todos los video rendition cuyo Status = Q
-    #
     for VRendition in VSubRenditions:
 	
 	logging.info("CheckAssignedVideoSubRenditions(): Video Rendition Check: " + VRendition.file_name)
@@ -233,6 +230,15 @@ def AssignVideoSubRenditions(UVSubRenditions = [],CarbonPOOL,ForceSchedule=False
     logging.info("AssignVideoSubRenditions(): End Checking Unassingned Video Renditions")
     return True
 
+
+def Main():
+    
+    SubProcessList = models.SubProcess.objects.filter(status='N')
+    for SubProcess in SubProcessList:
+	CreateVideoSubRenditions(SubProcess)
+	
+    	
+    
 
 
 def CreateVideoSubRendition(SubProcess=None):
