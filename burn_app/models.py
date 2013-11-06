@@ -81,7 +81,7 @@ class VideoSubRendition(models.Model):
 	src_svc_path					=models.CharField(max_length=256)
 	sub_file_name					=models.CharField(max_length=512)
 	error						=models.CharField(max_length=256, blank=True)
-	speed						=models.Charfield(max_length=25, blank=True)				
+	speed						=models.CharField(max_length=25, blank=True)				
 	progress					=models.CharField(max_length=10, blank=True)
 
 	def __unicode__ (self):
@@ -91,7 +91,7 @@ class Brand (models.Model):
 
 	name						=models.CharField(max_length=256)
 	subtitle_profile				=models.ForeignKey('SubtitleProfile')
-	video_profile					=models.ForeignKet('VideoProfile')	
+	video_profile					=models.ForeignKey('VideoProfile')	
 	def __unicode__ (self):
 		return self.name
 
