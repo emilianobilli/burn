@@ -66,25 +66,24 @@ class Daemon:
 		Start the daemon
 		"""
 		# Check for a pidfile to see if the daemon already runs
-		try:
-			pf = file(self.pidfile,'r')
-			pid = int(pf.read().strip())
-			if pid:
-				if not os.path.exists('/proc/'+ str(pid)):
-					self.delpid()
-					pid = None
-			pf.close()
-		except IOError:
-			pid = None
+#		try:
+#			pf = file(self.pidfile,'r')
+#			pid = int(pf.read().strip())
+#			if pid:
+#				if not os.path.exists('/proc/'+ str(pid)):
+#					self.delpid()
+#					pid = None
+#			pf.close()
+#		except IOError:
+#			pid = None
 	
-		if pid:
-			message = "pidfile %s already exist. Daemon already running\n"
-			sys.stderr.write(message % self.pidfile)
-			sys.exit(1)
+#		if pid:
+#			message = "pidfile %s already exist. Daemon already running\n"
+#			sys.stderr.write(message % self.pidfile)
+#			sys.exit(1)
 		
 		# Start the daemon
 		self.daemonize()
-		self.run()
 
 	
 	def status(self):

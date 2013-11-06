@@ -39,7 +39,7 @@ class TranscodingServer (models.Model):
 	ip_address					=models.CharField(max_length=15)
 	status						=models.CharField(max_length=1, choices = ACTIVE_STATUS)
 	def __unicode__(self):
-		return self.ip_adress
+		return self.ip_address
 
 
 	
@@ -99,7 +99,6 @@ class Brand (models.Model):
 class SubProcess (models.Model):
 	SUBPROCESS_QUEUE_STATUS = (
 		('D', 'Done'),
-		('W', 'Waiting'),
 		('N', 'New'),
 		('E', 'Error'),
 	)
@@ -122,24 +121,6 @@ def GetPath(path=None):
 
 def GetTranscodingServer():
     return TranscodingServer.objects.filter(status='E')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

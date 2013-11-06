@@ -1,3 +1,17 @@
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Stand alone script
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+from django.core.management import setup_environ
+from burn import settings
+setup_environ(settings)
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Modelo de la aplicacion
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+from burn_app import models
+
+
+
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # Carbon Coder 										     #
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -18,6 +32,7 @@ import time
 import logging
 import sys, time
 
+from daemon import Daemon
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # InitCarbonPool(): Inicializa el pool de Rhozets					     #
@@ -74,11 +89,11 @@ def SplitExtension(filename=None):
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # CheckAssignedVideoSubRenditions(): Chequea el status de los trabajos de Rhozdet	     #
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-def CheckAssignedVideoSubRenditions(VSubRenditions = [])
+def CheckAssignedVideoSubRenditions(VSubRenditions = []):
 
     logging.info("CheckAssignedVideoSubRenditions(): Start Check Video Rendition Status")
 
-    video_local_path = models.GetPath('renditions_local_path')
+    video_local_path = models.GetPath('renditions_local_path').location
             
     #
     # Agrega / si no es que exite al final
@@ -157,7 +172,7 @@ def CheckAssignedVideoSubRenditions(VSubRenditions = [])
 
 
 
-def AssignVideoSubRenditions(UVSubRenditions = [],CarbonPOOL,ForceSchedule=False):
+def AssignVideoSubRenditions(UVSubRenditions = [],CarbonPOOL = None,ForceSchedule=False):
     global ErrorString
     ErrorString = ''
 
@@ -231,16 +246,6 @@ def AssignVideoSubRenditions(UVSubRenditions = [],CarbonPOOL,ForceSchedule=False
     return True
 
 
-def Main():
-    
-    SubProcessList = models.SubProcess.objects.filter(status='N')
-    for SubProcess in SubProcessList:
-	CreateVideoSubRenditions(SubProcess)
-	
-    	
-    
-
-
 def CreateVideoSubRendition(SubProcess=None):
     
     if SubProcess is None:
@@ -254,9 +259,7 @@ def CreateVideoSubRendition(SubProcess=None):
         
 	if FileExist(subtitle_path,SubProcess.subtitle):
 	
-	    DstFileName = SplitExtension(SubProcess.file_name) + 
-		          VSRendition.SubProcess.brand.video_profile.sufix + 
-			  VSRendition.SubProcess.brand.video_profile.file_extension				        
+	    DstFileName = SplitExtension(SubProcess.file_name) + VSRendition.SubProcess.brand.video_profile.sufix +  VSRendition.SubProcess.brand.video_profile.file_extension				        
 	
 	    VSRendition = models.VideoSubRendition()
 	    VSRendition.file_name 	     = DstFileName
@@ -342,12 +345,35 @@ def StlToXmlTitler(SubProfile, StlFileName):
 	
     return XmlTitler
 
+def Main():
+    
+    while True:
+	SubProcessList = models.SubProcess.objects.filter(status='N')
+	for SubProcess in SubProcessList:
+	    CreateVideoSubRenditions(SubProcess)
 
+	Flag = False
+	while not Flag:
+    	    TServerList     = models.TranscodingServer.objects.filter(status='E')
+	    CarbonPOOL      = InitCarbonPool(TServerList)
+	    if CarbonPOOL is None:
+		time.sleep(10)
+	    else:
+		Flag = True
+
+	UnassignedList  = models.VideoSubRendition.objects.filter(status='U')
+	AssignVideoSubRenditions(UnassignedList, CarbonPOOL)
+    
+    
+	AssignedList    = models.VideoSubRendition.objects.filter(status='Q')
+	CheckAssignedVideoSubRenditions(AssignedList)
+
+	time.sleep(100)
 
 class main_daemon(Daemon):
     def run(self):
         try:
-    	    main()
+    	    Main()
 	except KeyboardInterrupt:
 	    sys.exit()	    
 
