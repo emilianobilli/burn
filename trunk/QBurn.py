@@ -1,26 +1,27 @@
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# Carbon Coder 
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# Carbon Coder 										     #
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 from carbonapi.CarbonSocketLayer import *
 from carbonapi.CarbonUtils 	 import *
 from carbonapi.CarbonJob 	 import *
 from carbonapi.CarbonSched 	 import *
 from carbonapi.XmlTitler 	 import *
 
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # STL Lib
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 from stl			 import *
-
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # Librerias Utiles
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 import time
 import logging
 import sys, time
 
 
-
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# InitCarbonPool(): Inicializa el pool de Rhozets					     #
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 def InitCarbonPool(TServerList = []):
 
     # Se crea el pool de Carbon
@@ -44,9 +45,9 @@ def InitCarbonPool(TServerList = []):
     return CPool
 
 
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# Comprueba la existencia de un archivo
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++    
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# Comprueba la existencia de un archivo							     #
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#	        
 def FileExist(path, file):
     if os.path.isfile(path+file):
 	return True
@@ -54,12 +55,30 @@ def FileExist(path, file):
     return False
 
 
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# Elimina las extensiones (Considera que puede haber puntos en el medio del archivo)	     #
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+def SplitExtension(filename=None):
+    
+    if filename is not None:
+	basename_tmp_list = filename.split('.')
+	i = 1
+	basename = basename_tmp_list[0]
+	while i < len(basename_tmp_list) -1:
+	    basename = basename + '.' + basename_tmp_list[i]
+	    i = i + 1
+	return basename
+    return None
+
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+# CheckAssignedVideoSubRenditions(): Chequea el status de los trabajos de Rhozdet	     #
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 def CheckAssignedVideoSubRenditions(VSubRenditions = [])
 
     logging.info("CheckAssignedVideoSubRenditions(): Start Check Video Rendition Status")
 
-
-    ################## Traer Video Local Path
+    video_local_path = models.GetPath('renditions_local_path')
             
     #
     # Agrega / si no es que exite al final
@@ -148,15 +167,17 @@ def AssignVideoSubRenditions(UVSubRenditions = [],CarbonPOOL,ForceSchedule=False
     logging.info("AssignVideoSubRenditions():Start Checking Unassingned Video Renditions")
 
     if len(UVSubRenditions) > 0:
+    
+	dst_svc_path = models.GetPath('renditions_svc_path')	
 
 	for VSubRendition in UVSubRenditions: 
 
 	    XmlTitlerElement = StlToXmlTitler(VSubRendition.subtitle_profile, VSubRendition.sub_file_name) 
 
-	    TranscodeInfo    =  MakeTranscodeInfo (VSubRendition.video_profile.guid, 
-					           VSubRendition.file_name, 
-					           DstPath ######,
-					           XmlTitlerElement)
+	    TranscodeInfo    = MakeTranscodeInfo(VSubRendition.video_profile.guid, 
+					         SplitExtension(VSubRendition.file_name), 
+					         dst_svc_path,
+					         XmlTitlerElement)
 
 	    logging.debug("AssignVideoSubRenditions(): Transcode Info: " +  str(TranscodeInfo))
 	    #
@@ -220,26 +241,40 @@ def CreateVideoSubRendition(SubProcess=None):
 	return False
 	
     subtitle_path = models.GetPath('subtitle_local_path')
-    video_path	  = models.GetPath('video_local_path')
-    svc_path	  = models.GetPath('rhozet_access_path')
+    svc_path	  = models.GetPath('master_svc_path')
+    media_path    = models.GetPath('master_local_path')
     
+    if FileExist(media_path,SubProcess.file_name):
+        
+	if FileExist(subtitle_path,SubProcess.subtitle):
+	
+	    DstFileName = SplitExtension(SubProcess.file_name) + 
+		          VSRendition.SubProcess.brand.video_profile.sufix + 
+			  VSRendition.SubProcess.brand.video_profile.file_extension				        
+	
+	    VSRendition = models.VideoSubRendition()
+	    VSRendition.file_name 	     = DstFileName
+	    VSRendition.video_profile        = SubProcess.brand.video_profile
+	    VSRendition.subtitle_profile     = SubProcess.brand.subtitle_profile
+	    VSRendition.transcoding_job_guid = ''    
+	    VSRendition.status		     = 'U'
+	    VSRendition.src_file_name        = SubProcess.file_name
+	    VSRendition.src_svc_path	     = svc_path
+	    VSRendition.sub_file_name	     = subtitle_path + SubProcess.subtitle
+	    VSRendition.save()
+	    SubProcess.status = 'D'
+	    SubProcess.save()
+	else:
+	    SubProcess.error  = 'Unable to locate subtitle [%s]' % subtitle_path + SubProcess.subtitle
+	    SubProcess.status = 'E'
+	    SubProcess.save()
+	    return False
     
-    if FileExist(video_path,SubProcess.file_name):
-    
-    #### Falta Buscar Subtitulo ####
-	    
-	VSRendition = models.VideoSubRendition()
-	VSRendition.file_name = #############
-	VSRendition.video_profile        = SubProcess.brand.video_profile
-	VSRendition.subtitle_profile     = SubProcess.brand.subtitle_profile
-	VSRendition.transcoding_job_guid = ''    
-	VSRendition.status		 = 'U'
-	VSRendition.src_file_name        = SubProcess.file_name
-	VSRendition.src_svc_path	 = svc_path
-	VSRendition.sub_file_name	 = ############# Guardar el file completo con ruta
-	VSRendition.save()
-    
-    #### Falta hacer dump ####
+    else:
+	SubProcess.error  = 'Unable to locate master file [%s]' % media_path + SubProcess.file_name
+	SubProcess.status = 'E'
+	SubProcess.save()
+	return False
     
     return True	
 	
