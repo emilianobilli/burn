@@ -34,6 +34,31 @@ import sys, time
 
 from daemon import Daemon
 
+
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Local Carbon Functions
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Retorna el Progreso y el Stado de un Job
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+def GetJobState(transcoder_ip, job_guid):
+    carbon = CarbonSocketLayer(transcoder_ip)
+    Job = CarbonJob(carbon, job_guid)
+    return Job.GetState(), str(Job.GetProgress())
+
+def GetJobSpeed(transcoder_ip, job_guid):
+    carbon = CarbonSocketLayer(transcoder_ip)
+    Job = CarbonJob(carbon, job_guid)
+    return Job.GetSpeed()
+    
+def GetJobError(transcoder_ip, job_guid):
+    carbon = CarbonSocketLayer(transcoder_ip)
+    Job = CarbonJob(carbon, job_guid)
+    return Job.GetError()    
+
+
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # InitCarbonPool(): Inicializa el pool de Rhozets					     #
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -93,7 +118,7 @@ def CheckAssignedVideoSubRenditions(VSubRenditions = []):
 
     logging.info("CheckAssignedVideoSubRenditions(): Start Check Video Rendition Status")
 
-    video_local_path = models.GetPath('renditions_local_path').location
+    video_local_path = models.GetPath('renditions_local_path')
             
     #
     # Agrega / si no es que exite al final
@@ -104,7 +129,6 @@ def CheckAssignedVideoSubRenditions(VSubRenditions = []):
     for VRendition in VSubRenditions:
 	
 	logging.info("CheckAssignedVideoSubRenditions(): Video Rendition Check: " + VRendition.file_name)
-	logging.info("CheckAssignedVideoSubRenditions(): Video Rendition Item: " + VRendition.item.name)
 
 	logging.info("CheckAssignedVideoSubRenditions(): Transcoding Server: " + VRendition.transcoding_server.ip_address)
 	logging.info("CheckAssignedVideoSubRenditions(): Job GUID: " + VRendition.transcoding_job_guid)
@@ -180,7 +204,7 @@ def AssignVideoSubRenditions(UVSubRenditions = [],CarbonPOOL = None,ForceSchedul
 
     if len(UVSubRenditions) > 0:
     
-	dst_svc_path = models.GetPath('renditions_svc_path')	
+	dst_svc_path = models.GetPath('renditions_svc_path')
 
 	for VSubRendition in UVSubRenditions: 
 
@@ -246,7 +270,7 @@ def AssignVideoSubRenditions(UVSubRenditions = [],CarbonPOOL = None,ForceSchedul
     return True
 
 
-def CreateVideoSubRendition(SubProcess=None):
+def CreateVideoSubRenditions(SubProcess=None):
     
     if SubProcess is None:
 	return False
@@ -259,7 +283,7 @@ def CreateVideoSubRendition(SubProcess=None):
         
 	if FileExist(subtitle_path,SubProcess.subtitle):
 	
-	    DstFileName = SplitExtension(SubProcess.file_name) + VSRendition.SubProcess.brand.video_profile.sufix +  VSRendition.SubProcess.brand.video_profile.file_extension				        
+	    DstFileName = SplitExtension(SubProcess.file_name) + SubProcess.brand.video_profile.sufix + SubProcess.brand.video_profile.file_extension				        
 	
 	    VSRendition = models.VideoSubRendition()
 	    VSRendition.file_name 	     = DstFileName
@@ -324,14 +348,14 @@ def StlToXmlTitler(SubProfile, StlFileName):
     Style.ColorR = R
     Style.ColorG = G
     Style.ColorB = B
-    Style.Transparency  = SubProfile.transparency
-    Style.ShadowSize    = SubProfile.shadow_size
-    Style.HardShadow    = SubProfile.hard_shadow
+#    Style.Transparency  = SubProfile.transparency
+#    Style.ShadowSize    = SubProfile.shadow_size
+#    Style.HardShadow    = SubProfile.hard_shadow
     Style.StartTimecode = '00:00:00;00'
-    Style.EndTimecode   = '99:99:99;99'
+    Style.EndTimecode   = '00:00:00;01'
     Style.Title		= ''
      
-    XmlTitler.append(Style)
+    XmlTitler.AppendData(Style)
 
     # Por Cada TTI del Stl crea una estructura de tipo Data()
     for tti in stl.tti:
@@ -341,7 +365,7 @@ def StlToXmlTitler(SubProfile, StlFileName):
         TextAndTiming.Title	    = tti.tf.encode_utf8()
         TextAndTiming.PosX	    = '0.50'
         TextAndTiming.PosY	    = '0.75'
-        XmlTitler.AppendData(data)
+        XmlTitler.AppendData(TextAndTiming)
 	
     return XmlTitler
 
