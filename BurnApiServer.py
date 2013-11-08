@@ -1,46 +1,42 @@
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # Stand alone script
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 from django.core.management import setup_environ
 from burn import settings
 setup_environ(settings)
 
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # Modelo de la aplicacion
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 from burn_app import models
 
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # RPC XML
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-# STL Lib
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-from stl			 import *
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # Librerias Utiles
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 import time
 import logging
 import sys, time
+import Settings
 
 from daemon import Daemon
 
 
 def CreateSubtitleProcess(VideoFileName, SubtitleFileName, Brand):
 
-    try:
-	brand  = models.Brand.object.get(name=Brand)
-    except:
-	return False 
+
+
+    brand  = models.Brand.objects.get(name=Brand)
 
     SubProcess = models.SubProcess()
     SubProcess.brand     = brand
     SubProcess.file_name = VideoFileName
-    SubProcess.subtitle  = SubTitleFileName
+    SubProcess.subtitle  = SubtitleFileName
     SubProcess.status	 = 'N'
     SubProcess.save()
     
@@ -49,7 +45,7 @@ def Main():
 
     logging.basicConfig(format='%(asctime)s - BurnApiServer.py -[%(levelname)s]: %(message)s', filename='./log/BurnApiServer.log',level=logging.INFO)
 
-    server = SimpleXMLRPCServer((ApiSettings.SERVER_HOST, int(Settings.SERVER_PORT)), allow_none=True)
+    server = SimpleXMLRPCServer((Settings.API_IPADDRESS, int(Settings.API_PORT)), allow_none=True)
     server.register_introspection_functions()
     server.register_function(CreateSubtitleProcess)
     server.serve_forever()
