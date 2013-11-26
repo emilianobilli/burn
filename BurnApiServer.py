@@ -26,10 +26,7 @@ import Settings
 
 from daemon import Daemon
 
-
-def CreateSubtitleProcess(VideoFileName, SubtitleFileName, Brand):
-
-
+def CreateSubtitleProcess(VideoFileName, SubtitleFileName, Brand, DstBaseName=''):
 
     brand  = models.Brand.objects.get(name=Brand)
 
@@ -37,18 +34,36 @@ def CreateSubtitleProcess(VideoFileName, SubtitleFileName, Brand):
     SubProcess.brand     = brand
     SubProcess.file_name = VideoFileName
     SubProcess.subtitle  = SubtitleFileName
+    SubProcess.dst_basename = DstBaseName
     SubProcess.status	 = 'N'
     SubProcess.save()
+    
+    
+def CreateTranscodeProcess(VideoFileName, VideoProfileName, DstBaseName=''):
+
+    print VideoProfileName
+
+    video_profile = models.VideoProfile.objects.get(name=VideoProfileName)
+    
+    TranscodeProcess = models.TranscodeProcess()
+    TranscodeProcess.file_name     = VideoFileName
+    TranscodeProcess.video_profile = video_profile
+    TranscodeProcess.dst_basename = DstBaseName
+    TranscodeProcess.status        = 'N'    
+    TranscodeProcess.save()
+    
     
 
 def Main():
 
     logging.basicConfig(format='%(asctime)s - BurnApiServer.py -[%(levelname)s]: %(message)s', filename='./log/BurnApiServer.log',level=logging.INFO)
-
     server = SimpleXMLRPCServer((Settings.API_IPADDRESS, int(Settings.API_PORT)), allow_none=True)
     server.register_introspection_functions()
     server.register_function(CreateSubtitleProcess)
+    server.register_function(CreateTranscodeProcess)
     server.serve_forever()
+
+
 
 
 class main_daemon(Daemon):

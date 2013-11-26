@@ -21,7 +21,9 @@ class VideoProfile (models.Model):
 	guid						=models.CharField(max_length=256)
 	file_extension					=models.CharField(max_length=64)
 	status						=models.CharField(max_length=1, choices = ACTIVE_STATUS)
-	sufix						=models.CharField(max_length=32)
+	sufix						=models.CharField(max_length=32, blank=True)
+	path						=models.ForeignKey('Path')
+	priority					=models.IntegerField()
 	def __unicode__(self):
 		return self.name
 
@@ -40,7 +42,6 @@ class TranscodingServer (models.Model):
 	status						=models.CharField(max_length=1, choices = ACTIVE_STATUS)
 	def __unicode__(self):
 		return self.ip_address
-
 
 	
 class SubtitleProfile (models.Model):
@@ -64,26 +65,31 @@ class SubtitleProfile (models.Model):
 	def __unicode__(self):
 		return self.name
 
-class VideoSubRendition(models.Model):
+class VideoRendition(models.Model):
 	VIDEO_RENDITION_STATUS = (
 	    ('Q', 'Queued'),
 	    ('F', 'Finished'),
 	    ('U', 'Unasigned'),
 	    ('E', 'Error'),
 	)
+	ACTION = (
+	    ('B', 'Burn Subtitle'),
+	    ('T', 'Simple Transcode'),
+	)
+	action						=models.CharField(max_length=1, choices=ACTION)
 	file_name					=models.CharField(max_length=256)
 	video_profile					=models.ForeignKey('VideoProfile')
-	subtitle_profile				=models.ForeignKey('SubtitleProfile')
+	subtitle_profile				=models.ForeignKey('SubtitleProfile', blank=True, null=True)
 	transcoding_server				=models.ForeignKey('TranscodingServer', blank=True, null=True)
 	transcoding_job_guid				=models.CharField(max_length=256, blank=True)
 	status						=models.CharField(max_length=1, choices=VIDEO_RENDITION_STATUS)
 	src_file_name					=models.CharField(max_length=256)
 	src_svc_path					=models.CharField(max_length=256)
-	sub_file_name					=models.CharField(max_length=512)
+	sub_file_name					=models.CharField(max_length=512, blank=True)
 	error						=models.CharField(max_length=256, blank=True)
 	speed						=models.CharField(max_length=25, blank=True)				
 	progress					=models.CharField(max_length=10, blank=True)
-
+	priority					=models.IntegerField()
 	def __unicode__ (self):
 		return self.file_name
 
@@ -110,7 +116,23 @@ class SubProcess (models.Model):
 	
 	def __unicode__ (self):
 		return self.file_name
-		
+	
+class TranscodeProcess (models.Model):
+	TRANSCODE_QUEUE_STATUS = (
+		('D', 'Done'),
+		('N', 'New'),
+		('E', 'Error'),
+	)
+	file_name					=models.CharField(max_length=256)
+	status						=models.CharField(max_length=1, choices=TRANSCODE_QUEUE_STATUS)
+	video_profile					=models.ForeignKey('VideoProfile')
+	dst_basename					=models.CharField(max_length=255)
+	error						=models.CharField(max_length=256, blank=True)
+	
+	def __unicode__ (self):
+		return self.file_name
+
+	
 def GetPath(path=None):
     if path is not None:
 	try:
