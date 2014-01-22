@@ -360,8 +360,10 @@ def StlToXmlTitler(SubProfile, StlFileName):
 
     # Crea el estilo
     Style = Data()
-    Style.Font     = SubProfile.font
+#    Style.Font     = SubProfile.font
     Style.CharSize = SubProfile.charsize
+
+    print Style.Font
 
     # Carga los valores del estilo en el XML de acuerdo al SubtitleProfile
     R,G,B = SubProfile.color_rgb.split(',')
@@ -379,7 +381,10 @@ def StlToXmlTitler(SubProfile, StlFileName):
 
     # Por Cada TTI del Stl crea una estructura de tipo Data()
     for tti in stl.tti:
+
 	TextAndTiming = Data()
+	TextAndTiming.Font          = SubProfile.font
+	TextAndTiming.FontCharSet   = 'ANSI'
         TextAndTiming.StartTimecode = str(tti.tci) 
         TextAndTiming.EndTimecode   = str(tti.tco)
         TextAndTiming.Title	    = tti.tf.encode_utf8()
