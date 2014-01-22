@@ -14,7 +14,7 @@ class SubtitleProfileAdmin (admin.ModelAdmin):
     list_display = ('name', 'font' )
 
 class VideoRenditionAdmin (admin.ModelAdmin):
-    list_display = ('action', 'priority','file_name', 'video_profile', 'status', 'speed',  'transcoding_server', 'subtitle_profile')    
+    list_display = ('action', 'priority','file_name', 'video_profile', 'status', 'progress', 'speed',  'transcoding_server', 'subtitle_profile')    
     
 class SubProcessAdmin (admin.ModelAdmin):
     list_display = ('file_name', 'status')
