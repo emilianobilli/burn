@@ -131,7 +131,7 @@ class TextField(object):
 	return True if ( ( self.tf[index] >> 4 ) == 0x0C) else False
 
     def isSign(self,index=0):
-	return True if (self.tf[index] == 0xBF) or (self.tf[index] == 0xA1) else False
+	return True if (self.tf[index] == 0xBF) or (self.tf[index] == 0xA1) or (self.tf[index] == 0xEC) else False
 
     def isItalicOn(self, index=0):
 	return True if ( self.tf[index] == 0x80 ) else False
@@ -162,8 +162,10 @@ class TextField(object):
 		elif self.isSign(i):
 		    if self.tf[i] == 0xBF:
 			utf8_str = utf8_str + '\xC2\xBF'
-		    else:
+		    elif self.tf[i] == 0xA1:
 			utf8_str = utf8_str + '\xC2\xA1'
+		    else:
+			utf8_str = utf8_str + '*'
 		elif self.isCrLf(i):
 		    utf8_str = utf8_str + '\n'
 		elif self.isBoxingOn(i) or self.isBoxingOff(i):

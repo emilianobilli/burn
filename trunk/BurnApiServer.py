@@ -48,7 +48,8 @@ def CreateTranscodeProcess(VideoFileName, VideoProfileName, DstBaseName=''):
     TranscodeProcess = models.TranscodeProcess()
     TranscodeProcess.file_name     = VideoFileName
     TranscodeProcess.video_profile = video_profile
-    TranscodeProcess.dst_basename = DstBaseName
+    TranscodeProcess.material_type = 'F'
+    TranscodeProcess.dst_basename  = DstBaseName
     TranscodeProcess.status        = 'N'    
     TranscodeProcess.save()
     
