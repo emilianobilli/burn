@@ -2,7 +2,7 @@ from django.contrib import admin
 from burn_app.models import *
 
 class PathAdmin (admin.ModelAdmin):
-    list_display = ('key', 'location')
+    list_display = ('key', 'location', 'path_type', 'video_profile_name')
     
 class TranscodingServerAdmin (admin.ModelAdmin):
     list_display = ('name', 'ip_address','status')
@@ -23,7 +23,7 @@ class BrandAdmin (admin.ModelAdmin):
     list_display = ('name', 'subtitle_profile')
 
 class TranscodeProcessAdmin (admin.ModelAdmin):
-    list_display = ('file_name', 'status', 'video_profile')    
+    list_display = ('file_name', 'status', 'material_type','video_profile')    
 
 
 

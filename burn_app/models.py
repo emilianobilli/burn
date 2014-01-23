@@ -29,9 +29,17 @@ class VideoProfile (models.Model):
 
 class Path (models.Model):
 
+	PATH_TYPE = ( 
+	    ('O', 'Only Path'),
+	    ('S', 'Smart Path'),
+	)
+
 	key						=models.CharField(max_length=24)
 	location					=models.CharField(max_length=256)
 	description					=models.CharField(max_length=256)
+	path_type					=models.CharField(max_length=1, choices = PATH_TYPE, default='O')
+	video_profile_name				=models.CharField(max_length=100, blank=True)
+		
 	def __unicode__(self):
 		return self.key
 
@@ -123,7 +131,12 @@ class TranscodeProcess (models.Model):
 		('N', 'New'),
 		('E', 'Error'),
 	)
+	MATERIAL_TYPE = (
+		('F', 'Fork Master'),
+		('L', 'Local Master'),
+	)
 	file_name					=models.CharField(max_length=256)
+	material_type					=models.CharField(max_length=1, choices=MATERIAL_TYPE, default='P')
 	status						=models.CharField(max_length=1, choices=TRANSCODE_QUEUE_STATUS)
 	video_profile					=models.ForeignKey('VideoProfile')
 	dst_basename					=models.CharField(max_length=255)

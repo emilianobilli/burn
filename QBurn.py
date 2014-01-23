@@ -257,8 +257,13 @@ def CreateVideoTranscodeRenditions(TranscodeProcess=None):
     if TranscodeProcess is None:
 	return False
 	
-    svc_path   = models.GetPath('master_svc_path')
-    media_path = models.GetPath('master_local_path')
+    	
+    if TranscodeProcess.material_type == 'F':	
+	svc_path   = models.GetPath('fork_master_svc_path')
+	media_path = models.GetPath('fork_master_local_path')
+    else:
+	svc_path   = models.GetPath('local_master_svc_path')
+	media_path = models.GetPath('local_master_local_path')
 
     if FileExist(media_path,TranscodeProcess.file_name):
 	VSRendition = models.VideoRendition()
@@ -287,8 +292,8 @@ def CreateVideoSubRenditions(SubProcess=None):
 	return False
 	
     subtitle_path = models.GetPath('subtitle_local_path')
-    svc_path	  = models.GetPath('master_svc_path')
-    media_path    = models.GetPath('master_local_path')
+    svc_path	  = models.GetPath('fork_master_svc_path')
+    media_path    = models.GetPath('fork_master_local_path')
     
     if FileExist(media_path,SubProcess.file_name):
         
