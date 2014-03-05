@@ -57,6 +57,41 @@ class GSI_Block(object):
 	    self.rd  = Date(GSI_Data[230:236])
 
 
+class SubTiming(object):
+    def __init__(self):
+	self.tci  = None
+	self.tco  = None
+	self.text = None
+
+class SUB(object):
+    def __init__(self):
+	self.timing = []
+
+    def load(self, filename = ''):
+	if filename.endswith('.sub'):
+	    print filename
+	    try:
+		fd = open(filename, 'rt')
+	    except:
+		pass	
+
+	    line = fd.readline()
+	    while line:
+#	    print line
+#	    for line in fd.readline():
+		print line
+		tci, tco, text = line.split(';')
+		STiming = SubTiming()
+		hh, mm, ss = tci.split(':')
+		STiming.tci = fromSplitedValues(int(hh),int(mm),int(ss),00,29.97)
+		hh, mm, ss = tco.split(':')
+		STiming.tco = fromSplitedValues(int(hh),int(mm),int(ss),00,29.97)
+		STiming.text = text
+		self.timing.append(STiming)
+		line = fd.readline()
+
+	    fd.close()
+
 
 class STL(object):
 
@@ -131,7 +166,7 @@ class TextField(object):
 	return True if ( ( self.tf[index] >> 4 ) == 0x0C) else False
 
     def isSign(self,index=0):
-	return True if (self.tf[index] == 0xBF) or (self.tf[index] == 0xA1) or (self.tf[index] == 0xEC) else False
+	return True if (self.tf[index] == 0xBF) or (self.tf[index] == 0xA1) or (self.tf[index] == 0xEC) or (self.tf[index] == 0xE1) or (self.tf[index] == 0xED) or (self.tf[index] == 0xAA ) or (self.tf[index] == 0xBA) else False
 
     def isItalicOn(self, index=0):
 	return True if ( self.tf[index] == 0x80 ) else False
@@ -164,6 +199,8 @@ class TextField(object):
 			utf8_str = utf8_str + '\xC2\xBF'
 		    elif self.tf[i] == 0xA1:
 			utf8_str = utf8_str + '\xC2\xA1'
+		    elif self.tf[i] == 0xAA or self.tf[i] == 0xBA:
+			utf8_str = utf8_str + '\x22'
 		    else:
 			utf8_str = utf8_str + '*'
 		elif self.isCrLf(i):

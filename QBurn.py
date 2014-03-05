@@ -186,7 +186,10 @@ def AssignVideoRenditions(UVRenditions = [],CarbonPOOL = None,ForceSchedule=Fals
 	for VRendition in UVRenditions: 
 
 	    if VRendition.action == 'B':
-		XmlTitlerElement = StlToXmlTitler(VRendition.subtitle_profile, VRendition.sub_file_name) 
+		if VRendition.sub_file_name.endswith('.stl'):
+		    XmlTitlerElement = StlToXmlTitler(VRendition.subtitle_profile, VRendition.sub_file_name) 
+		else:
+		    XmlTitlerElement = SubToXmlTitler(VRendition.subtitle_profile, VRendition.sub_file_name)
 	    else:
 		XmlTitlerElement = None
 
@@ -299,10 +302,10 @@ def CreateVideoSubRenditions(SubProcess=None):
         
 	if FileExist(subtitle_path,SubProcess.subtitle):
 	
-	    DstFileName = SplitExtension(SubProcess.file_name) + SubProcess.brand.video_profile.sufix + SubProcess.brand.video_profile.file_extension				        
+#	    DstFileName = SplitExtension(SubProcess.file_name) + SubProcess.brand.video_profile.sufix + SubProcess.brand.video_profile.file_extension				        
 	
 	    VSRendition = models.VideoRendition()
-	    VSRendition.file_name 	     = DstFileName
+	    VSRendition.file_name 	     = SubProcess.dst_basename
 	    VSRendition.video_profile        = SubProcess.brand.video_profile
 	    VSRendition.subtitle_profile     = SubProcess.brand.subtitle_profile
 	    VSRendition.transcoding_job_guid = ''    
@@ -348,6 +351,45 @@ def MakeTranscodeInfo (TranscodeGuid, DstBasename, DstPath, XmlTitlerElement):
                           
     return TranscodeInfo
 
+
+def SubToXmlTitler(SubProfile, SubFileName):
+    sub = SUB()
+    sub.load(SubFileName)
+    # Crea la estructura de datos XmlTitler
+    XmlTitler = TitlerData()
+
+    # Crea el estilo
+    Style = Data()
+    Style.Font     = SubProfile.font
+    Style.CharSize = SubProfile.charsize
+
+    # Carga los valores del estilo en el XML de acuerdo al SubtitleProfile
+    R,G,B = SubProfile.color_rgb.split(',')
+    Style.ColorR = R
+    Style.ColorG = G
+    Style.ColorB = B
+#    Style.Transparency  = SubProfile.transparency
+    Style.ShadowSize    = SubProfile.shadow_size
+    Style.HardShadow    = SubProfile.hard_shadow
+    Style.StartTimecode = '00:00:00;00'
+    Style.EndTimecode   = '00:00:00;01'
+    Style.Title		= ''
+     
+    XmlTitler.AppendData(Style)
+
+    for timing in sub.timing:
+	TextAndTiming = Data()
+#	TextAndTiming.Font          = SubProfile.font
+	TextAndTiming.FontCharSet   = 'ANSI'
+        TextAndTiming.StartTimecode = str(timing.tci) 
+        TextAndTiming.EndTimecode   = str(timing.tco)
+        TextAndTiming.Title	    = timing.text
+        TextAndTiming.PosX	    = '0.50'
+        TextAndTiming.PosY	    = '0.835'
+        XmlTitler.AppendData(TextAndTiming)
+	
+    return XmlTitler    
+
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # StlToXmlTitler(): Convierte un STL a la estructura de Datos XmlTitler		    #
 #										    #
@@ -365,10 +407,9 @@ def StlToXmlTitler(SubProfile, StlFileName):
 
     # Crea el estilo
     Style = Data()
-#    Style.Font     = SubProfile.font
+    Style.Font     = SubProfile.font
     Style.CharSize = SubProfile.charsize
 
-    print Style.Font
 
     # Carga los valores del estilo en el XML de acuerdo al SubtitleProfile
     R,G,B = SubProfile.color_rgb.split(',')
@@ -376,8 +417,8 @@ def StlToXmlTitler(SubProfile, StlFileName):
     Style.ColorG = G
     Style.ColorB = B
 #    Style.Transparency  = SubProfile.transparency
-#    Style.ShadowSize    = SubProfile.shadow_size
-#    Style.HardShadow    = SubProfile.hard_shadow
+    Style.ShadowSize    = SubProfile.shadow_size
+    Style.HardShadow    = SubProfile.hard_shadow
     Style.StartTimecode = '00:00:00;00'
     Style.EndTimecode   = '00:00:00;01'
     Style.Title		= ''
@@ -388,7 +429,7 @@ def StlToXmlTitler(SubProfile, StlFileName):
     for tti in stl.tti:
 
 	TextAndTiming = Data()
-	TextAndTiming.Font          = SubProfile.font
+#	TextAndTiming.Font          = SubProfile.font
 	TextAndTiming.FontCharSet   = 'ANSI'
         TextAndTiming.StartTimecode = str(tti.tci) 
         TextAndTiming.EndTimecode   = str(tti.tco)

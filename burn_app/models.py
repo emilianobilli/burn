@@ -120,6 +120,7 @@ class SubProcess (models.Model):
 	subtitle					=models.CharField(max_length=256)
 	brand 						=models.ForeignKey('Brand')
 	status						=models.CharField(max_length=1, choices=SUBPROCESS_QUEUE_STATUS)
+	dst_basename					=models.CharField(max_length=256)
 	error						=models.CharField(max_length=256, blank=True)
 	
 	def __unicode__ (self):
