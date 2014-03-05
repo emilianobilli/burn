@@ -20,7 +20,7 @@ class SubProcessAdmin (admin.ModelAdmin):
     list_display = ('file_name', 'status')
 
 class BrandAdmin (admin.ModelAdmin):
-    list_display = ('name', 'subtitle_profile')
+    list_display = ('name', 'subtitle_profile', 'video_profile')
 
 class TranscodeProcessAdmin (admin.ModelAdmin):
     list_display = ('file_name', 'status', 'material_type','video_profile')    
