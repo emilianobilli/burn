@@ -1,3 +1,11 @@
+#
+#
+# Libreria para leer y escribir STL
+#
+# Emiliano A. Billi 2013
+#
+#
+
 from struct import *
 from timecode import *
 import sys
@@ -41,6 +49,7 @@ class Date(object):
 class GSI_Block(object):
     def __init__(self, GSI_Data=None):
 	if GSI_Data is not None and len(GSI_Data) == 1024:
+	    self.allData = GSI_Data
 	    self.cpn = BytesToString(GSI_Data[0:3],3)
 	    self.dfc = BytesToString(GSI_Data[3:11],8)
 	    self.dsc = BytesToString(GSI_Data[11:12],1)
@@ -55,6 +64,10 @@ class GSI_Block(object):
 	    self.slr = BytesToString(GSI_Data[208:224],16)
 	    self.cd  = Date(GSI_Data[224:230])
 	    self.rd  = Date(GSI_Data[230:236])
+
+
+    def repack(self):
+	return bytearray(self.allData)
 
 
 class SubTiming(object):
@@ -117,6 +130,23 @@ class STL(object):
 	    
 	    fd.close()    
 
+    def save(self, filename =''):
+	if filename.endswith('.stl'):
+	    try:
+		fd = open(filename, 'wb')
+	    except:
+		pass
+
+	    GSI = self.gsi.repack()
+	    fd.write(GSI)
+	    for TTI in self.tti:
+		TTI_Data,TTI_Text = TTI.repack()
+		fd.write(TTI_Data)
+		fd.write(TTI_Text)
+		
+	    fd.close()
+
+
     def export(self, filename = '', format = 'srt', som = '01:00:00;00'):
 	if filename != '':
 	    try:
@@ -147,6 +177,9 @@ class TextField(object):
 	else:
 	    self.tf = bytearray(112)
 
+    def repack(self):
+	return self.tf
+
     def isControl(self, index=0):
 	return True if (self.tf[index] >= 0x00 and self.tf[index] <= 0x1F )   else False 
 
@@ -166,7 +199,7 @@ class TextField(object):
 	return True if ( ( self.tf[index] >> 4 ) == 0x0C) else False
 
     def isSign(self,index=0):
-	return True if (self.tf[index] == 0xBF) or (self.tf[index] == 0xA1) or (self.tf[index] == 0xEC) or (self.tf[index] == 0xE1) or (self.tf[index] == 0xED) or (self.tf[index] == 0xAA ) or (self.tf[index] == 0xBA) else False
+	return True if (self.tf[index] == 0xBF) or (self.tf[index] == 0xA1) or (self.tf[index] == 0xEC) or (self.tf[index] == 0xE1) or (self.tf[index] == 0xED) or (self.tf[index] == 0xAA ) or (self.tf[index] == 0xBA) or (self.tf[index] == 0xA4) else False
 
     def isItalicOn(self, index=0):
 	return True if ( self.tf[index] == 0x80 ) else False
@@ -201,6 +234,8 @@ class TextField(object):
 			utf8_str = utf8_str + '\xC2\xA1'
 		    elif self.tf[i] == 0xAA or self.tf[i] == 0xBA:
 			utf8_str = utf8_str + '\x22'
+		    elif self.tf[i] == 0xA4:
+			utf8_str = utf8_str + '\x24'	
 		    else:
 			utf8_str = utf8_str + '*'
 		elif self.isCrLf(i):
@@ -242,6 +277,31 @@ class TTI_Block(object):
 
     def isSubtitle(self):
 	return True if self.cf == 0x00 else False
+
+    def repack(self):
+	#
+	# Separa en todos los valores TCI y TCO
+	#
+	hh_in,mm_in,ss_in,ff_in,fr     = self.tci.splitedvalues()
+	hh_out,mm_out,ss_out,ff_out,fr = self.tco.splitedvalues()
+	#
+	# Agrupa todos los valores del area de datos en un bytearray
+	#
+	TTI_Data = bytearray(pack('=BHBBBBBBBBBBBBB', self.sgn,
+						      self.sn,
+						      self.ebn,
+						      self.cs,
+						      hh_in,
+						      mm_in,
+						      ss_in,
+						      ff_in,
+						      hh_out,
+						      mm_out,
+						      ss_out,
+						      ff_out,
+						      self.vp, self.jc, self.cf))
+	TTI_Text = self.tf.repack()
+	return TTI_Data, TTI_Text
 
 
 
