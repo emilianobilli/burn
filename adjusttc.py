@@ -54,7 +54,7 @@ def main():
 	    tc = timecode.fromString(a)
 	    add = False
 	elif o in ('-n', '--number'):
-	    num = a
+	    num = int(a)
 	else:
 	    assert False, "unhandled option"
 
@@ -76,7 +76,7 @@ def main():
 		    else:
 			tf.tci = tf.tci - tc
 		        tf.tco = tf.tco - tc
-		    
+		i = i + 1
 	    subtitle.save(out)
 	else:
 	    usage()
