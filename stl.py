@@ -121,7 +121,6 @@ class STL(object):
 		
 	    buff = fd.read(1024)
 	    self.gsi = GSI_Block(buff)
-	
 	    buff = fd.read(128)
 	    while buff != b'':
 	        tti = TTI_Block(buff)
@@ -129,6 +128,8 @@ class STL(object):
 	        buff = fd.read(128)
 	    
 	    fd.close()    
+	else:
+	    print filename
 
     def save(self, filename =''):
 	if filename.endswith('.stl'):
