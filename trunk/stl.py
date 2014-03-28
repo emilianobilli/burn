@@ -113,9 +113,9 @@ class STL(object):
 	self.tti  = []
 
     def load(self, filename = ''):
-	if filename.endswith('.stl'):
+	if filename.endswith('.stl') or filename.endswith('.STL'):
 	    try:
-		fd = open(filename,'rb')
+    		fd = open(filename,'rb')
 	    except:
 		pass
 		
