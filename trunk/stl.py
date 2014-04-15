@@ -132,7 +132,7 @@ class STL(object):
 	    print filename
 
     def save(self, filename =''):
-	if filename.endswith('.stl'):
+	if filename.endswith('.stl') or filename.endswith('.STL'):
 	    try:
 		fd = open(filename, 'wb')
 	    except:
@@ -200,7 +200,7 @@ class TextField(object):
 	return True if ( ( self.tf[index] >> 4 ) == 0x0C) else False
 
     def isSign(self,index=0):
-	return True if (self.tf[index] == 0xBF) or (self.tf[index] == 0xA1) or (self.tf[index] == 0xEC) or (self.tf[index] == 0xE1) or (self.tf[index] == 0xED) or (self.tf[index] == 0xAA ) or (self.tf[index] == 0xBA) or (self.tf[index] == 0xA4) else False
+	return True if (self.tf[index] == 0xBF) or (self.tf[index] == 0xA1) or (self.tf[index] == 0xEC) or (self.tf[index] == 0xE1) or (self.tf[index] == 0xED) or (self.tf[index] == 0xAA ) or (self.tf[index] == 0xBA) or (self.tf[index] == 0xA4) or (self.tf[index] == 0xB0) else False
 
     def isItalicOn(self, index=0):
 	return True if ( self.tf[index] == 0x80 ) else False
@@ -237,6 +237,8 @@ class TextField(object):
 			utf8_str = utf8_str + '\x22'
 		    elif self.tf[i] == 0xA4:
 			utf8_str = utf8_str + '\x24'	
+		    elif self.tf[i] == 0xB0:
+			utf8_str = utf8_str + '\xC2\xB0'	
 		    else:
 			utf8_str = utf8_str + '*'
 		elif self.isCrLf(i):
