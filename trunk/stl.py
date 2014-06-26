@@ -197,10 +197,10 @@ class TextField(object):
 	return True if (self.tf[index] == 0x83 ) else False
 
     def isAccent(self, index=0):
-	return True if ( ( self.tf[index] >> 4 ) == 0x0C) else False
+	return True if ( ( self.tf[index] >> 4 ) == 0x0C) and (self.tf[index] != 0xC9) else False
 
     def isSign(self,index=0):
-	return True if (self.tf[index] == 0xBF) or (self.tf[index] == 0xA1) or (self.tf[index] == 0xEC) or (self.tf[index] == 0xE1) or (self.tf[index] == 0xED) or (self.tf[index] == 0xAA ) or (self.tf[index] == 0xBA) or (self.tf[index] == 0xA4) or (self.tf[index] == 0xB0) else False
+	return True if (self.tf[index] == 0xBF) or (self.tf[index] == 0xA1) or (self.tf[index] == 0xEC) or (self.tf[index] == 0xE1) or (self.tf[index] == 0xED) or (self.tf[index] == 0xAA ) or (self.tf[index] == 0xBA) or (self.tf[index] == 0xA4) or (self.tf[index] == 0xB0) or (self.tf[index] == 0xA9) or (self.tf[index] == 0xB9) or (self.tf[index] == 0xC9 )else False
 
     def isItalicOn(self, index=0):
 	return True if ( self.tf[index] == 0x80 ) else False
@@ -238,7 +238,14 @@ class TextField(object):
 		    elif self.tf[i] == 0xA4:
 			utf8_str = utf8_str + '\x24'	
 		    elif self.tf[i] == 0xB0:
-			utf8_str = utf8_str + '\xC2\xB0'	
+			utf8_str = utf8_str + '\xC2\xB0'
+		    elif self.tf[i] == 0xA9:
+			utf8_str = utf8_str + '\x60'	
+		    elif self.tf[i] == 0xB9:
+			utf8_str = utf8_str + '\xC2\xB4'
+		    elif self.tf[i] == 0xC9:
+			utf8_str = utf8_str + ' '
+		    
 		    else:
 			utf8_str = utf8_str + '*'
 		elif self.isCrLf(i):

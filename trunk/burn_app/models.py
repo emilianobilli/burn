@@ -51,6 +51,7 @@ class TranscodingServer (models.Model):
 	def __unicode__(self):
 		return self.ip_address
 
+
 	
 class SubtitleProfile (models.Model):
 	
@@ -83,15 +84,17 @@ class VideoRendition(models.Model):
 	ACTION = (
 	    ('B', 'Burn Subtitle'),
 	    ('T', 'Simple Transcode'),
+	    ('S', 'Stich Movies')
 	)
 	action						=models.CharField(max_length=1, choices=ACTION)
+	stich_process					=models.ForeignKey('StichProcess', blank=True, null=True)
 	file_name					=models.CharField(max_length=256)
 	video_profile					=models.ForeignKey('VideoProfile')
 	subtitle_profile				=models.ForeignKey('SubtitleProfile', blank=True, null=True)
 	transcoding_server				=models.ForeignKey('TranscodingServer', blank=True, null=True)
 	transcoding_job_guid				=models.CharField(max_length=256, blank=True)
 	status						=models.CharField(max_length=1, choices=VIDEO_RENDITION_STATUS)
-	src_file_name					=models.CharField(max_length=256)
+	src_file_name					=models.CharField(max_length=256, blank=True)
 	src_svc_path					=models.CharField(max_length=256)
 	sub_file_name					=models.CharField(max_length=512, blank=True)
 	error						=models.CharField(max_length=256, blank=True)
@@ -146,6 +149,29 @@ class TranscodeProcess (models.Model):
 	def __unicode__ (self):
 		return self.file_name
 
+
+class StichProcess (models.Model):
+	STICH_QUEUE_STATUS = (
+	    ('W', 'Waiting'),
+	    ('D', 'Done'),
+	    ('E', 'Error'),
+	)
+	dst_basename					=models.CharField(max_length=255)
+	status						=models.CharField(max_length=1, choices=STICH_QUEUE_STATUS)
+	video_profile					=models.ForeignKey('VideoProfile')
+	total_fragments					=models.CharField(max_length=3)
+	error						=models.CharField(max_length=256, blank=True)
+	
+	def __unicode__ (self):
+		return self.dst_basename
+
+class StichFragment (models.Model):
+	stich_process					=models.ForeignKey('StichProcess')
+	file_name					=models.CharField(max_length=256)
+	order						=models.CharField(max_length=3)
+	
+	def __unicode__(self):
+		return '%s-%s' % (self.stich_process, self.file_name)
 	
 def GetPath(path=None):
     if path is not None:

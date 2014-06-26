@@ -26,6 +26,33 @@ import Settings
 
 from daemon import Daemon
 
+
+def CreateStichProcess(VideoFileName, VideoProfileName,DstBaseName, Sort, TotalFragments):
+    try:
+	SProcess = models.StichProcess.objects.get(dst_basename=DstBaseName)
+    except:
+	SProcess = models.StichProcess()
+	SProcess.dst_basename = DstBaseName
+	video_profile = models.VideoProfile.objects.get(name=VideoProfileName)
+	SProcess.video_profile = video_profile
+	SProcess.total_fragments = TotalFragments
+	SProcess.status = 'W'
+	SProcess.save()
+	
+    try:
+	Fragment = models.StichFragment.objects.get(stich_process=SProcess, file_name=VideoFileName)
+	Fragment.order = Sort
+	Fragment.save()
+    except:
+	Fragment = models.StichFragment()
+	Fragment.stich_process=SProcess
+	Fragment.file_name = VideoFileName
+	Fragment.order = Sort
+	Fragment.save()
+	
+    
+    
+
 def CreateSubtitleProcess(VideoFileName, SubtitleFileName, Brand, DstBaseName=''):
 
     brand  = models.Brand.objects.get(name=Brand)
@@ -62,6 +89,7 @@ def Main():
     server.register_introspection_functions()
     server.register_function(CreateSubtitleProcess)
     server.register_function(CreateTranscodeProcess)
+    server.register_function(CreateStichProcess)
     server.serve_forever()
 
 

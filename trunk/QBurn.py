@@ -190,9 +190,22 @@ def AssignVideoRenditions(UVRenditions = [],CarbonPOOL = None,ForceSchedule=Fals
 		    XmlTitlerElement = StlToXmlTitler(VRendition.subtitle_profile, VRendition.sub_file_name) 
 		else:
 		    XmlTitlerElement = SubToXmlTitler(VRendition.subtitle_profile, VRendition.sub_file_name)
+		Source = None
+		Stich = False
+	    elif VRendition.action == 'S':
+		Fragments = models.StichFragment.objects.filter(stich_process=VRendition.stich_process)
+		FileList = []
+		for fragment in Fragments:
+		    FileList.append(VRendition.src_svc_path +fragment.file_name)
+			
+		Source = StichSource(FileList)	    
+		dump(Source)
+		XmlTitlerElement = None
+		Stich = True
 	    else:
 		XmlTitlerElement = None
-
+		Source = None
+		Stich = False
 
 	    dst_svc_path     = VRendition.video_profile.path.location
 
@@ -206,7 +219,7 @@ def AssignVideoRenditions(UVRenditions = [],CarbonPOOL = None,ForceSchedule=Fals
 	    # Crea el XML con el Job de Transcodificacion
 	    #
 	    try:
-		XmlJob    = CreateCarbonXMLJob(VRendition.src_svc_path,VRendition.src_file_name,[],[TranscodeInfo],None,None)
+		XmlJob    = CreateCarbonXMLJob(VRendition.src_svc_path,VRendition.src_file_name,[],[TranscodeInfo],Source,None, Stich)
 	    except:
 		e = sys.exc_info()[0]
 	        logging.error("AssignVideoSubRenditions(): 01: Exception making Carbon XML Job. Catch: " + e)
@@ -256,6 +269,46 @@ def AssignVideoRenditions(UVRenditions = [],CarbonPOOL = None,ForceSchedule=Fals
     return True
 
 
+def CreateVideoStichRenditions(StichProcess=None):
+
+    if StichProcess is None:
+	return False
+	
+    svc_path   = models.GetPath('fork_master_svc_path')
+    media_path = models.GetPath('fork_master_local_path')
+
+    StichFragments = models.StichFragment.objects.filter(stich_process=StichProcess)
+    
+    #
+    # Si la cantidad de fragmentos 
+    #
+    if len(StichFragments) == int(StichProcess.total_fragments):
+	for fragment in StichFragments:
+	    if not FileExist(media_path,fragment.file_name):
+		StichProcess.error  = 'StichFragment (%s) -> Does Not exist filename: %s' % (fragment,fragment.file_name)
+		StichProcess.status = 'E'
+		StichProcess.save()
+		return False
+	
+	VSRendition = models.VideoRendition()    
+	VSRendition.file_name 	     	 = StichProcess.dst_basename
+	VSRendition.video_profile    	 = StichProcess.video_profile
+	VSRendition.stich_process	 = StichProcess
+	VSRendition.transcoding_job_guid = ''    
+	VSRendition.status		 = 'U'
+	VSRendition.src_file_name        = ''
+	VSRendition.src_svc_path	 = svc_path
+	VSRendition.action		 = 'S'
+	VSRendition.priority		 = StichProcess.video_profile.priority
+	VSRendition.save()
+	StichProcess.status		 = 'D'
+	StichProcess.save()	
+	
+	
+    else:
+	return True
+	
+	
 def CreateVideoTranscodeRenditions(TranscodeProcess=None):
     if TranscodeProcess is None:
 	return False
@@ -451,6 +504,12 @@ def Main():
 	TranscodeProcessList = models.TranscodeProcess.objects.filter(status='N')
 	for TranscodeProcess in TranscodeProcessList:
 	    CreateVideoTranscodeRenditions(TranscodeProcess)    
+
+
+	StichProcessList = models.StichProcess.objects.filter(status='W')
+	for StichProcess in StichProcessList:
+	    CreateVideoStichRenditions(StichProcess)
+
 
 	Flag = False
 	while not Flag:
