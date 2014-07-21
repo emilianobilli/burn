@@ -199,6 +199,9 @@ class TextField(object):
     def isAccent(self, index=0):
 	return True if ( ( self.tf[index] >> 4 ) == 0x0C) and (self.tf[index] != 0xC9) else False
 
+    def isRareSymbol(self, index=0):
+	return True if ( ( self.tf[index] >= 0xe0 ) and (self.tf[index] <= 0xef ) ) else False
+
     def isSign(self,index=0):
 	return True if (self.tf[index] == 0xBF) or (self.tf[index] == 0xA1) or (self.tf[index] == 0xEC) or (self.tf[index] == 0xE1) or (self.tf[index] == 0xED) or (self.tf[index] == 0xAA ) or (self.tf[index] == 0xBA) or (self.tf[index] == 0xA4) or (self.tf[index] == 0xB0) or (self.tf[index] == 0xA9) or (self.tf[index] == 0xB9) or (self.tf[index] == 0xC9 )else False
 
@@ -254,6 +257,8 @@ class TextField(object):
 		    pass
 		elif self.isUnderlineOn(i) or self.isUnderlineOff(i):
 		    pass
+		elif self.isRareSymbol(i):
+		    pass    
 		else:
 		    utf8_str = utf8_str + chr(self.tf[i])
 	    i = i + 1
