@@ -29,7 +29,7 @@ class StichProcessAdmin(admin.ModelAdmin):
     list_display = ('dst_basename', 'status')
 
 class StichFragmentAdmin(admin.ModelAdmin):
-    list_display = ('stich_process','file_name')
+    list_display = ('stich_process','file_name','order')
 
 
 admin.site.register(Path, PathAdmin)

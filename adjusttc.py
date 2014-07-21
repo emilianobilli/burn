@@ -21,6 +21,7 @@ def usage():
     print "-f, --force\tForce Story and Lang correction based in STORY_LANG*.stl filename"
     print "-p, --prefix\tAdd Story Prefix if not exist"
     print "-2, --two\tShow the first 2 TCI and TCO and only the first Text"
+    print "-8, --eight\tForce SOM in 00:00:00;00 to 00:00:00;08 in the first subtitle"
     print "\n"
     print "Report bugs to <ebilli@claxson.com>"
 
@@ -41,9 +42,10 @@ def split_filename(file_in=''):
 
 def main():
     try:
-	opts, args = getopt.getopt(sys.argv[1:], "hdi:o:a:s:n:p:f2", [ "help", "dump", "input=","output=","add=", "sub=", "number=", "prefix=", "force", "two"])
+	opts, args = getopt.getopt(sys.argv[1:], "hdi:o:a:s:n:p:f28", [ "help", "dump", "input=","output=","add=", "sub=", "number=", "prefix=", "force", "two", "eight"])
     except getopt.GetoptError as err:
 	# print help information and exit:
+	print "xxx"    
         print str(err)
 	usage()
         sys.exit(2)     
@@ -57,7 +59,7 @@ def main():
     force  = False
     prefix = ''
     two    = False
-    
+    eight  = False
     
     for o,a in opts:
 	if o == '-h':
@@ -83,6 +85,8 @@ def main():
 	    prefix = a    
 	elif o in ('-2', '--two'):
 	    two    = True
+	elif o in ('-8', '--eight'):
+	    eight  = True
 	else:
 	    assert False, "unhandled option"
 
@@ -104,7 +108,7 @@ def main():
 	print '-------------------------------------------------------'
 
     else:
-	if file_in is not None and file_out is not None and tc is not None:
+	if file_in is not None and file_out is not None and (tc is not None or eight == True):
 	    subtitle = stl.STL()
 	    subtitle.load(file_in)
 	    i = 0
@@ -120,7 +124,11 @@ def main():
 		    		story = prefix +  story_tmp
 		    	else:
 		    	    story = story_tmp
-		    		
+		    	
+		    	if eight == True:
+		    	    tf.tci = timecode.fromString('00:00:00;00')
+		    	    tf.tco = timecode.fromString('00:00:00;08')
+		    	
 		        line_zero = bytearray(b'STORY: %s\x8aLANG: %s' % (story, lang))			
 		        j = 0
 			while j < 112:
@@ -134,7 +142,7 @@ def main():
 			print "Error in filename: %s, expected: STORY_LANG*.stl" % file_in
 		        sys.exit(2)
 
-		if i >= num:
+		if i >= num and tc is not None:
 		    if add:
 			tf.tci = tf.tci + tc
 	    	        tf.tco = tf.tco + tc

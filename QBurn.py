@@ -193,13 +193,12 @@ def AssignVideoRenditions(UVRenditions = [],CarbonPOOL = None,ForceSchedule=Fals
 		Source = None
 		Stich = False
 	    elif VRendition.action == 'S':
-		Fragments = models.StichFragment.objects.filter(stich_process=VRendition.stich_process)
-		FileList = []
+		Fragments = models.StichFragment.objects.filter(stich_process=VRendition.stich_process).order_by('order')
+		FileList = []	
 		for fragment in Fragments:
-		    FileList.append(VRendition.src_svc_path +fragment.file_name)
+		    FileList.append(VRendition.src_svc_path + fragment.file_name)
 			
 		Source = StichSource(FileList)	    
-		dump(Source)
 		XmlTitlerElement = None
 		Stich = True
 	    else:
@@ -454,6 +453,8 @@ def StlToXmlTitler(SubProfile, StlFileName):
     # Abre el archivo STL
     stl = STL()
     stl.load(StlFileName)
+
+    print StlFileName
 
     # Crea la estructura de datos XmlTitler
     XmlTitler = TitlerData()
