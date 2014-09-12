@@ -42,7 +42,7 @@ def split_filename(file_in=''):
 
 def main():
     try:
-	opts, args = getopt.getopt(sys.argv[1:], "hdi:o:a:s:n:p:f28", [ "help", "dump", "input=","output=","add=", "sub=", "number=", "prefix=", "force", "two", "eight"])
+	opts, args = getopt.getopt(sys.argv[1:], "hdi:o:a:s:n:p:f28c", [ "help", "dump", "input=","output=","add=", "sub=", "number=", "prefix=", "force", "two", "eight", "clean"])
     except getopt.GetoptError as err:
 	# print help information and exit:
 	print "xxx"    
@@ -60,6 +60,7 @@ def main():
     prefix = ''
     two    = False
     eight  = False
+    clean_second_line = False
     
     for o,a in opts:
 	if o == '-h':
@@ -87,6 +88,8 @@ def main():
 	    two    = True
 	elif o in ('-8', '--eight'):
 	    eight  = True
+	elif o in ('-c', '--clean'):
+	    clean_second_line = True    
 	else:
 	    assert False, "unhandled option"
 
@@ -97,7 +100,7 @@ def main():
 	print '-------------------------------------------------------'
 	print file_in
 	for tf in subtitle.tti:
-	    if two and i == 0:
+	    if two and (i == 0 or i == 1):
 		print ("SGN: %d, SN: %d, EBN: %d, CS:%d: - %s -> %s - VP: %d, JC: %d, CF: %d, TF: %s") % (tf.sgn,tf.sn,tf.ebn, tf.cs, tf.tci, tf.tco, tf.vp, tf.jc, tf.cf, tf.tf.encode_utf8())
 	    else:
 		print ("SGN: %d, SN: %d, EBN: %d, CS:%d: - %s -> %s - VP: %d, JC: %d, CF: %d") % (tf.sgn,tf.sn,tf.ebn, tf.cs, tf.tci, tf.tco, tf.vp, tf.jc, tf.cf)
@@ -108,7 +111,7 @@ def main():
 	print '-------------------------------------------------------'
 
     else:
-	if file_in is not None and file_out is not None and (tc is not None or eight == True):
+	if file_in is not None and file_out is not None and (tc is not None or eight == True or clean_second_line == True):
 	    subtitle = stl.STL()
 	    subtitle.load(file_in)
 	    i = 0
@@ -142,6 +145,14 @@ def main():
 			print "Error in filename: %s, expected: STORY_LANG*.stl" % file_in
 		        sys.exit(2)
 
+		if i == 1 and clean_second_line == True:
+		    tsl = timecode.fromString('00:00:00;08')
+		    if tf.tco == tsl:
+			j = 0
+			while j < 112:
+		    	    tf.tf.tf[j] = b'\x8f'
+		    	    j = j + 1
+		
 		if i >= num and tc is not None:
 		    if add:
 			tf.tci = tf.tci + tc

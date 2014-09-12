@@ -8,7 +8,7 @@ class TranscodingServerAdmin (admin.ModelAdmin):
     list_display = ('name', 'ip_address','status')
     
 class VideoProfileAdmin (admin.ModelAdmin):
-    list_display = ('name', 'priority', 'file_extension', 'status', 'sufix')
+    list_display = ('name', 'priority', 'path','file_extension', 'status', 'sufix')
 
 class SubtitleProfileAdmin (admin.ModelAdmin):
     list_display = ('name', 'font' )
