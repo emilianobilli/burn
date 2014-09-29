@@ -476,15 +476,13 @@ def StlToXmlTitler(SubProfile, StlFileName):
     Style.StartTimecode = '00:00:00;00'
     Style.EndTimecode   = '00:00:00;01'
     Style.Title		= ''
-     
     XmlTitler.AppendData(Style)
-
     # Por Cada TTI del Stl crea una estructura de tipo Data()
     for tti in stl.tti:
-
 	TextAndTiming = Data()
 #	TextAndTiming.Font          = SubProfile.font
 	TextAndTiming.FontCharSet   = 'ANSI'
+        print tti.sn
         TextAndTiming.StartTimecode = str(tti.tci) 
         TextAndTiming.EndTimecode   = str(tti.tco)
         TextAndTiming.Title	    = tti.tf.encode_utf8()

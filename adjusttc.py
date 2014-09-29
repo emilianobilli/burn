@@ -22,6 +22,8 @@ def usage():
     print "-p, --prefix\tAdd Story Prefix if not exist"
     print "-2, --two\tShow the first 2 TCI and TCO and only the first Text"
     print "-8, --eight\tForce SOM in 00:00:00;00 to 00:00:00;08 in the first subtitle"
+    print "-c, --clean\tClean second line"
+    print "-e, --export\tExport a .sub subtitle"
     print "\n"
     print "Report bugs to <ebilli@claxson.com>"
 
@@ -42,7 +44,7 @@ def split_filename(file_in=''):
 
 def main():
     try:
-	opts, args = getopt.getopt(sys.argv[1:], "hdi:o:a:s:n:p:f28c", [ "help", "dump", "input=","output=","add=", "sub=", "number=", "prefix=", "force", "two", "eight", "clean"])
+	opts, args = getopt.getopt(sys.argv[1:], "hdi:o:a:s:n:p:f28ce:", [ "help", "dump", "input=","output=","add=", "sub=", "number=", "prefix=", "force", "two", "eight", "clean", "export="])
     except getopt.GetoptError as err:
 	# print help information and exit:
 	print "xxx"    
@@ -61,6 +63,8 @@ def main():
     two    = False
     eight  = False
     clean_second_line = False
+    export = False
+    export_file = None
     
     for o,a in opts:
 	if o == '-h':
@@ -90,8 +94,17 @@ def main():
 	    eight  = True
 	elif o in ('-c', '--clean'):
 	    clean_second_line = True    
+	elif o in ('-e', '--export'):
+	    export = True
+	    export_file = a    
 	else:
 	    assert False, "unhandled option"
+
+    if export == True and file_in is not None and export_file is not None:
+	subtitle = stl.STL()
+	subtitle.load(file_in)
+	subtitle.export(export_file, 'srt', '00:00:00;00')
+	return 
 
     if dump == True and file_in is not None:
 	subtitle = stl.STL()
