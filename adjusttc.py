@@ -3,7 +3,7 @@ import timecode
 import getopt
 import sys
 import re
-
+import os
 
 def usage():
     print "Usage: adjusttc.py [OPTION] [FILE]..."
@@ -30,8 +30,13 @@ def usage():
 
 def split_filename(file_in=''):
     if file_in is not '' and (file_in.endswith('.stl') or file_in.endswith('.STL')):
-	
-	path = file_in.split('/')
+
+	if os.name == 'nt':
+	    separator = '/'
+	elif os.name == 'posix':
+	    separator = '\\'
+    	
+	path = file_in.split(separator)
 	file = path[len(path)-1]    
 	result = re.match('(.+)_(ESP|PRT)(\.|_)', file)
 	if result:
