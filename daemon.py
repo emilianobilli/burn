@@ -114,6 +114,33 @@ class Daemon:
 				message = "Daemon is running\n"
 				sys.stdout.write(message)
 
+	def zabbix(self):
+		"""
+		Status of de daemon
+		"""
+		# Get the pid from the pidfile
+		try:
+			pf = file(self.pidfile,'r')
+			pid = int(pf.read().strip())
+			pf.close()
+		except IOError:
+			pid = None
+	
+		if not pid:
+			message = "0"
+			sys.stdout.write(message)
+			return # not an error in a restart
+		else:
+			if not os.path.exists('/proc/'+ str(pid)):
+				message = "Daemon not running\n"
+				sys.stdout.write(message)
+				self.delpid()
+				pid = None
+				return
+			else:
+				message = "1"
+				sys.stdout.write(message)
+
 
 	def stop(self):
 		"""
