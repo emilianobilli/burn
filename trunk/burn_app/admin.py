@@ -1,6 +1,12 @@
 from django.contrib import admin
 from burn_app.models import *
 
+class InternalCustomerAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+
+class BillingAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description')
+
 class PathAdmin (admin.ModelAdmin):
     list_display = ('key', 'location', 'path_type', 'video_profile_name')
     
@@ -8,13 +14,13 @@ class TranscodingServerAdmin (admin.ModelAdmin):
     list_display = ('name', 'ip_address','status')
     
 class VideoProfileAdmin (admin.ModelAdmin):
-    list_display = ('name', 'priority', 'path','file_extension', 'status', 'sufix')
+    list_display = ('name', 'billing', 'priority', 'path','file_extension', 'status', 'sufix')
 
 class SubtitleProfileAdmin (admin.ModelAdmin):
     list_display = ('name', 'font' )
 
 class VideoRenditionAdmin (admin.ModelAdmin):
-    list_display = ('id','action', 'priority','file_name', 'video_profile', 'status', 'progress', 'speed',  'transcoding_server', 'subtitle_profile')    
+    list_display = ('id','creation_date','action', 'priority','file_name', 'video_profile', 'status', 'progress', 'speed',  'transcoding_server', 'subtitle_profile')    
     
 class SubProcessAdmin (admin.ModelAdmin):
     list_display = ('file_name', 'brand','status')
@@ -42,3 +48,5 @@ admin.site.register(SubProcess, SubProcessAdmin)
 admin.site.register(StichProcess, StichProcessAdmin)
 admin.site.register(StichFragment, StichFragmentAdmin)
 admin.site.register(Brand, BrandAdmin)
+admin.site.register(Billing,BillingAdmin)
+admin.site.register(InternalCustomer,InternalCustomerAdmin)

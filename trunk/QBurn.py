@@ -10,8 +10,6 @@ setup_environ(settings)
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 from burn_app import models
 
-
-
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 # Carbon Coder 										     #
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
@@ -31,6 +29,7 @@ from stl			 import *
 import time
 import logging
 import sys, time
+import datetime
 
 from daemon import Daemon
 
@@ -131,6 +130,10 @@ def CheckAssignedVideoRenditions(VRenditions = []):
 	JobState, Progress = GetJobState(VRendition.transcoding_server.ip_address, VRendition.transcoding_job_guid)
 	logging.info("CheckAssignedVideoSubRenditions(): Job Progress: " + str(Progress))
 	logging.info("CheckAssignedVideoSubRenditions(): Job State: " + JobState)
+
+	if VRendition.creation_date is None:
+	    VRendition.creation_date = datetime.datetime.now()
+	    
 	
 	if JobState == 'NEX_JOB_COMPLETED':
     	    VRendition.status   = 'F'
@@ -536,7 +539,7 @@ class main_daemon(Daemon):
 	    sys.exit()	    
 
 if __name__ == "__main__":
-	daemon = main_daemon('./pid/QBurn.pid', stdout='./log/QBurn.err', stderr='./log/QBurn.err')
+	daemon = main_daemon('/opt/packager/app/burn/pid/QBurn.pid', stdout='/opt/packager/app/burn/log/QBurn.err', stderr='/opt/packager/app/burn/log/QBurn.err')
 	if len(sys.argv) == 2:
 		if 'start'     == sys.argv[1]:
 			daemon.start()
@@ -549,6 +552,9 @@ if __name__ == "__main__":
 
 		elif 'status'  == sys.argv[1]:
 			daemon.status()
+
+		elif 'zabbix'  == sys.argv[1]:
+			daemon.zabbix()
 		else:
 			print "Unknown command"
 			sys.exit(2)
@@ -556,3 +562,4 @@ if __name__ == "__main__":
 	else:
 		print "usage: %s start|stop|restart|run" % sys.argv[0]
 		sys.exit(2)
+

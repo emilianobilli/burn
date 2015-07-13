@@ -18,6 +18,7 @@ FORMAT = (
 class VideoProfile (models.Model):
 	
 	name						=models.CharField(unique=True, max_length=32)
+	billing						=models.ForeignKey('Billing', blank=True, null=True)
 	guid						=models.CharField(max_length=256)
 	file_extension					=models.CharField(max_length=64)
 	status						=models.CharField(max_length=1, choices = ACTIVE_STATUS)
@@ -42,6 +43,23 @@ class Path (models.Model):
 		
 	def __unicode__(self):
 		return self.key
+
+
+class InternalCustomer (models.Model):
+	name						=models.CharField(max_length=50)
+	billing_account					=models.ManyToManyField('Billing')
+
+	def __unicode__(self):
+		return self.name
+		
+
+class Billing (models.Model):
+	name						=models.CharField(max_length=50)
+	description					=models.CharField(max_length=255)
+	
+	def __unicode__(self):
+	    return str(self.id) + '-' + self.name	
+
 
 class TranscodingServer (models.Model):
 
@@ -86,6 +104,8 @@ class VideoRendition(models.Model):
 	    ('T', 'Simple Transcode'),
 	    ('S', 'Stich Movies')
 	)
+	creation_date					=models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
 	action						=models.CharField(max_length=1, choices=ACTION)
 	stich_process					=models.ForeignKey('StichProcess', blank=True, null=True)
 	file_name					=models.CharField(max_length=256)
